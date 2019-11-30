@@ -36,7 +36,7 @@ class QueryRecorder
         $this->logger = new NullLogger();
     }
 
-    public function begin(string $name)
+    public function begin(string $name): void
     {
         $node = new ValueNode($name);
         $this->stack[$name] = $node;
@@ -47,13 +47,13 @@ class QueryRecorder
     /**
      * @TODO Handle invalidly nested blocks
      * End a block.
-     * If a name is supplied, and that name isn't the current level, recurse up until we find it.
+     * @TODO If a name is supplied, and that name isn't the current level, recurse up until we find it.
      * If it doesn't exist, throw an error
      * If we're at the root level, close nothing
      *
      * @param string|null $name
      */
-    public function end(?string $name = null)
+    public function end(?string $name = null): void
     {
 //        if (count($this->stack) === 1) {
 //            return;
@@ -67,7 +67,7 @@ class QueryRecorder
         }
     }
 
-    public function addQuery($query)
+    public function addQuery($query): void
     {
 //        /**
 //         * As many of our pages do repeated queries with different parameters, we gather
@@ -81,11 +81,11 @@ class QueryRecorder
         $this->currentNode->add(new ValueNode($query));
     }
 
-    public function getQueriesInBlock($name)
+    public function getQueriesInBlock($name): array
     {
         if ( ! isset($this->stack[$name])) {
             $this->logger->warning("Block '$name' does not exist");
-            return;
+            return [];
         }
         $out = [];
         foreach ($this->stack[$name]->all() as $node) {
@@ -97,7 +97,7 @@ class QueryRecorder
         return $out;
     }
 
-    public function getQueriesFromRoot()
+    public function getQueriesFromRoot(): array
     {
         return $this->getQueriesInBlock($this->rootName);
     }
@@ -110,7 +110,7 @@ class QueryRecorder
      *
      * @return array
      */
-    public function getWriteTables($blockName = null)
+    public function getWriteTables($blockName = null): array
     {
         $blockName = $blockName ?? $this->rootName;
         $queries = $this->getQueriesInBlock($blockName);
@@ -132,7 +132,7 @@ class QueryRecorder
      *
      * @return array
      */
-    public function getReadTables($blockName = null)
+    public function getReadTables($blockName = null): array
     {
         $blockName = $blockName ?? $this->rootName;
         $queries = $this->getQueriesInBlock($blockName);
