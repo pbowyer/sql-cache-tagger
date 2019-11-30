@@ -5,9 +5,14 @@ namespace pbowyer\SqlCacheTagger;
 
 use drupol\phptree\Node\ValueNode;
 use pbowyer\SqlCacheTagger\QueryParser\QueryParserInterface;
+use Psr\Log\LoggerAwareTrait;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 
 class QueryRecorder
 {
+    use LoggerAwareTrait;
+
     private $stack;
     /** @var ValueNode[] */
     private $tree;
@@ -17,6 +22,10 @@ class QueryRecorder
      * @var QueryParserInterface
      */
     private $queryParser;
+    /**
+     * @var LoggerInterface
+     */
+    protected $logger;
 
     public function __construct(QueryParserInterface $queryParser)
     {
@@ -24,6 +33,7 @@ class QueryRecorder
         $this->tree = $this->stack[$this->rootName];
         $this->currentNode = $this->stack[$this->rootName];
         $this->queryParser = $queryParser;
+        $this->logger = new NullLogger();
     }
 
     public function begin(string $name)
@@ -74,6 +84,7 @@ class QueryRecorder
     public function getQueriesInBlock($name)
     {
         if ( ! isset($this->stack[$name])) {
+            $this->logger->warning("Block '$name' does not exist");
             return;
         }
         $out = [];
