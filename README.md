@@ -1,17 +1,19 @@
+# SQL Cache Tagger
 
 This package starts from a simple premise:
 
 1. Cache items can be tagged with the names of the database tables they read from
 2. Cache items can be invalidated based on the database tables that were written to
 
+Jump to the [installation guide](#installation)
 
 # :cop: Why?????
 
-4 years ago I worked on a site running a particularly bad CMS, which used Varnish to improve the site's performance. As a CMS with a large plugin library the plugins couldn't be modified to clear the cache when they modified data. So *any* change meant the *entire Varnish cache* had to be emptied.
+4 years ago I worked on a site running a particularly bad CMS, which used Varnish to improve the site's performance. As a CMS with a large plugin library the plugins didn't know where the data they managed appeared. So *any* change meant the *entire Varnish cache* had to be emptied.
 
-I wanted to improve that by tracking which items might have changed when a given database table was modified. Clearing a subset of the cache would result in lower load and better load times.
+I wanted to improve that by tracking which items might have changed when a given database table was modified. Clearing a subset of the cache would result in lower load and better end-user performance.
 
-Alas other tasks took priority, but I didn't forget it.
+Other tasks took priority and I never built it.
 
 ## Time to revisit the idea
 Fast forward to the end of 2019 and I'm migrating a legacy system to Symfony. With new code written and some features migrated the rewrite is halted as not cost-effective. I have 2 mostly-separate codebases, with part of the public facing side in Symfony and the internal admin-system in the legacy codebase. The legacy system needs caching for performance reasons (some screens use 2000+ queries); Symfony would benefit too.
@@ -20,7 +22,7 @@ The systems share some code and the legacy system is wrapped in Symfony. Both us
 
 Worst of all is a data translation layer, put in place between the legacy system's database structure and part of the new, meant-to-be-replacement system. Eventually when everything was rewritten, the database structure would have been altered and the translation layer discarded. Now that's not goign to happen, and the translation layer is a query-hungry monstrosity.
 
-## A deliberate choice since Reads >> Writes
+## A deliberate choice since Reads &#8811; Writes
 The system gets an order of magnitude (or 3) more database reads than writes. Because of this, slowing down the workings of the system by tracking all SQL queries is an acceptable tradeoff for a faster user experience and less infrastructure to run the application (and reduce load on the database).
   
 # :thinking: Should I use this?
@@ -28,13 +30,17 @@ The system gets an order of magnitude (or 3) more database reads than writes. Be
 
 If your system's a pile of spaghetti code and you're modernising bits... well what harm can it do?
 
-# Why didn't you use...
+# Why didn't you...
 
-## Doctrine's Second Level Cache?
+## Use Doctrine's Second Level Cache?
 * ORM only
 * Is not aware of changes made to the persistent store by another application, which is a requirement
 * Works at a database-query level. I'm trying to cache the results of data manipulations that rely on the database for underlying data, not the queries themselves
 
+## Clear the entire cache every time?
+* Aside from the fact that the Legacy code would have to be modified to tell me _when to clear the cache_, performance
+* When content is modelled in discrete chunks (many entities, or multiple database tables rather than one massive _cough_ WordPress-style one _cough_) content, even all content of a particular entity, won't appear everywhere. It's nice not to see the spike in resource usage as the entire cache is rebuilt on page load 
+* The app this was written for is multi-tenant SaaS. I don't want to clear everyone's cache when one account makes an update
 
 # Limitations
 
@@ -45,7 +51,7 @@ If your system's a pile of spaghetti code and you're modernising bits... well wh
     * Any queries beginning `INSERT`, `UPDATE` or `DELETE` are write queries
         *  `SELECT` subqueries are ignored, and not treated as read queries
 
-# Install
+# Installation
 
 :rotating_light: WARNING: experimental code not for production :rotating_light: 
 
@@ -196,3 +202,4 @@ Register it in `config/services.yaml`:
 
 * Write a Symfony bundle, so this repository is less 'experimental'
 * Consider if there's any room to do this at a more granular level (e.g. per-row). Whether by hashing the data, or recognising the fetch data's primary key
+* Integrate with [HTTP tagged caching](https://github.com/FriendsOfSymfony/FOSHttpCache). Couple with Varnish.
