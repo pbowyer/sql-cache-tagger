@@ -139,9 +139,9 @@ class QueryRecorder
         $tables = [];
         foreach ($queries as $query) {
             if (stripos($query, 'SELECT') === 0) {
-                $tables += $this->queryParser->getTables($query);
+                $tables[] = $this->queryParser->getTables($query);
             }
         }
-        return array_values(array_unique($tables));
+        return array_values(array_unique(array_merge([], ...$tables)));
     }
 }
