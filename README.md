@@ -115,13 +115,15 @@ In production environment (`APP_ENV=prod`)... I have yet to find the best way. A
 
     ```yaml
     dbal:
-        profiling: true
+        logging: true
     ```
-1. Edit `config/services.yaml` and add:
+1. Create `config/services_prod.yaml` if it doesn't exist and add:
 
     ```yaml
-    doctrine.dbal.logger.profiling.default:
+services:
+    doctrine.dbal.logger:
         class: pbowyer\SqlCacheTagger\Recorder\DoctrineCacheTagsLogger
+        arguments: ['@pbowyer\SqlCacheTagger\QueryRecorder']
     ```
     
 ## Create a listener to invalidate the cache based on write queries
